@@ -25,7 +25,8 @@ defmodule ExBags.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ex_doc, "~> 0.24", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.24", only: :dev, runtime: false},
+      {:stream_data, "~> 0.5", only: :test}
     ]
   end
 

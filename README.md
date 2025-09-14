@@ -65,9 +65,9 @@ iex> ExBags.symmetric_difference(%{a: 1, b: 2}, %{c: 3, d: 4})
 
 Performs a reconciliation operation similar to SQL's FULL OUTER JOIN. Returns a tuple of three maps:
 
-1. **Intersection**: Key-value pairs that exist in both maps
-2. **Only in first**: Key-value pairs that exist only in the first map
-3. **Only in second**: Key-value pairs that exist only in the second map
+1. Intersection: Key-value pairs that exist in both maps
+2. Only in first: Key-value pairs that exist only in the first map
+3. Only in second: Key-value pairs that exist only in the second map
 
 ```elixir
 iex> ExBags.reconcile(%{a: 1, b: 2}, %{b: 2, c: 3})
@@ -96,9 +96,9 @@ iex> first_ten = stream |> Stream.take(10) |> Enum.to_list()
 
 # Streams can be filtered and transformed
 iex> result = ExBags.intersection_stream(map1, map2)
-|> Stream.filter(fn {_key, value} -> value > 5 end)
-|> Stream.map(fn {key, value} -> {key, value * 2} end)
-|> Enum.to_list()
+...> |> Stream.filter(fn {_key, value} -> value > 5 end)
+...> |> Stream.map(fn {key, value} -> {key, value * 2} end)
+...> |> Enum.to_list()
 
 # Reconcile stream returns three streams
 iex> {common, only_first, only_second} = ExBags.reconcile_stream(map1, map2)
@@ -163,6 +163,18 @@ Run the test suite:
 ```bash
 mix test
 ```
+
+The test suite includes:
+- Unit Tests: 43 comprehensive unit tests covering all functions
+- Doctests: 28 doctests embedded in the documentation
+- Property Tests: 22 property-based tests using StreamData for comprehensive validation
+
+Property testing ensures the functions work correctly with a wide variety of inputs, including:
+- Maps with different value types (integers, strings, booleans, atoms, lists)
+- Maps with nil values
+- Empty maps and edge cases
+- Large datasets and various key combinations
+- Stream laziness and composition properties
 
 ## Contributing
 
