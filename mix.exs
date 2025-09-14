@@ -10,8 +10,8 @@ defmodule ExBags.MixProject do
       deps: deps(),
       description: description(),
       package: package(),
-      source_url: "https://github.com/thanos/ex_bags",
-      homepage_url: "https://github.com/thanos/ex_bags",
+      source_url: "https://github.com/thanos/exbags",
+      homepage_url: "https://github.com/thanos/exbags",
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
         coveralls: :test,

@@ -1,6 +1,9 @@
 # ExBags
 
-  Duplicate bag (multiset) implementation for Elixir with set operations.
+[![Hex.pm](https://img.shields.io/hexpm/v/ex_bags.svg)](https://hex.pm/packages/ex_bags)
+[![HexDocs](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/ex_bags/)
+
+Duplicate bag (multiset) implementation for Elixir with set operations.
 
   ## Installation
 
