@@ -2,5 +2,4 @@
 alias ExBagsBenchmarks, as: Bench
 
 # Run all benchmarks
-Bench.run_intersect_benchmarks()
-Bench.run_stream_benchmarks()
+Bench.run_all_benchmarks()

@@ -4,7 +4,7 @@ defmodule ExBags.MixProject do
   def project do
     [
       app: :ex_bags,
-      version: "0.1.3",
+      version: "0.2.0",
       elixir: "~> 1.11",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -18,7 +18,8 @@ defmodule ExBags.MixProject do
         "coveralls.detail": :test,
         "coveralls.post": :test,
         "coveralls.html": :test
-      ]
+      ],
+      aliases: aliases()
     ]
   end
 
@@ -51,6 +52,16 @@ defmodule ExBags.MixProject do
       links: %{
         "GitHub" => "https://github.com/thanos/ex_bags"
       }
+    ]
+  end
+
+  # Custom mix tasks
+  defp aliases do
+    [
+      "benchmark": "run benchmarks/benchmarks.exs",
+      "benchmark.intersect": "run benchmarks/intersect_benchmark.exs",
+      "benchmark.stream": "run benchmarks/stream_benchmark.exs",
+      "benchmark.all": "run run_benchmarks.exs"
     ]
   end
 end

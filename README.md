@@ -266,7 +266,16 @@ View the report in `cover/excoveralls.html`.
 
 Run performance benchmarks:
 ```bash
-mix run run_benchmarks.exs
+# Run all benchmarks
+mix benchmark
+
+# Run specific benchmarks
+mix benchmark.intersect    # Compare Map, MapSet, ExBags intersect
+mix benchmark.stream       # Compare ExBags stream vs eager
+mix benchmark.all          # Run all benchmarks
+
+# Update README with current results
+mix run update_readme_benchmarks.exs
 ```
 
 Compare ExBags with Map and MapSet operations across different dataset sizes.
@@ -275,14 +284,13 @@ Available benchmark functions:
 - `ExBagsBenchmarks.run_intersect_benchmarks()` - Compare intersect performance
 - `ExBagsBenchmarks.run_stream_benchmarks()` - Compare stream vs eager performance
 
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a detailed list of changes and migration guides.
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
-
-## Changelog
-
-### 0.1.0
-- Initial release
 - Duplicate bag implementation with core operations
 - Set operations: intersect, difference, symmetric_difference, reconcile
 - Stream versions for memory-efficient processing
