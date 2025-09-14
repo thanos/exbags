@@ -2,449 +2,317 @@ defmodule ExBagsTest do
   use ExUnit.Case
   doctest ExBags
 
-  describe "intersection/2" do
-    test "returns common key-value pairs" do
-      map1 = %{a: 1, b: 2, c: 3}
-      map2 = %{b: 2, c: 4, d: 5}
+  describe "new/0" do
+    test "creates empty bag" do
+      assert ExBags.new() == %{}
+    end
+  end
 
-      result = ExBags.intersection(map1, map2)
-      expected = %{b: 2, c: 3}
+  describe "put/3" do
+    test "adds value to new key" do
+      bag = ExBags.new()
+      bag = ExBags.put(bag, :a, 1)
+      assert bag == %{a: [1]}
+    end
+
+    test "adds value to existing key" do
+      bag = %{a: [1]}
+      bag = ExBags.put(bag, :a, 2)
+      assert bag == %{a: [1, 2]}
+    end
+
+    test "adds multiple values to same key" do
+      bag = ExBags.new()
+      bag = ExBags.put(bag, :a, 1)
+      bag = ExBags.put(bag, :a, 2)
+      bag = ExBags.put(bag, :a, 3)
+      assert bag == %{a: [1, 2, 3]}
+    end
+  end
+
+  describe "get/2" do
+    test "returns values for existing key" do
+      bag = %{a: [1, 2, 3]}
+      assert ExBags.get(bag, :a) == [1, 2, 3]
+    end
+
+    test "returns empty list for non-existing key" do
+      bag = %{a: [1, 2]}
+      assert ExBags.get(bag, :b) == []
+    end
+  end
+
+  describe "keys/1" do
+    test "returns all keys" do
+      bag = %{a: [1], b: [2], c: [3]}
+      keys = ExBags.keys(bag)
+      assert :a in keys
+      assert :b in keys
+      assert :c in keys
+      assert length(keys) == 3
+    end
+  end
+
+  describe "values/1" do
+    test "returns all values flattened" do
+      bag = %{a: [1, 2], b: [3, 4]}
+      values = ExBags.values(bag)
+      assert Enum.sort(values) == [1, 2, 3, 4]
+    end
+  end
+
+  describe "update/3" do
+    test "updates values for existing key" do
+      bag = %{a: [1, 2, 3]}
+      bag = ExBags.update(bag, :a, fn values -> Enum.map(values, &(&1 * 2)) end)
+      assert bag == %{a: [2, 4, 6]}
+    end
+
+    test "updates values for non-existing key" do
+      bag = %{}
+      bag = ExBags.update(bag, :a, fn values -> values ++ [10] end)
+      assert bag == %{a: [10]}
+    end
+  end
+
+  describe "intersect/2" do
+    test "returns common values for common keys" do
+      bag1 = %{a: [1, 2], b: [2, 3]}
+      bag2 = %{b: [2, 4], c: [5]}
+
+      result = ExBags.intersect(bag1, bag2)
+      expected = %{b: [2]}
 
       assert result == expected
     end
 
-    test "returns empty map when no common keys" do
-      map1 = %{a: 1, b: 2}
-      map2 = %{c: 3, d: 4}
+    test "returns empty bag when no common keys" do
+      bag1 = %{a: [1], b: [2]}
+      bag2 = %{c: [3], d: [4]}
 
-      result = ExBags.intersection(map1, map2)
-
-      assert result == %{}
-    end
-
-    test "returns empty map when first map is empty" do
-      map1 = %{}
-      map2 = %{a: 1, b: 2}
-
-      result = ExBags.intersection(map1, map2)
+      result = ExBags.intersect(bag1, bag2)
 
       assert result == %{}
     end
 
-    test "returns empty map when second map is empty" do
-      map1 = %{a: 1, b: 2}
-      map2 = %{}
+    test "returns empty bag when first bag is empty" do
+      bag1 = %{}
+      bag2 = %{a: [1], b: [2]}
 
-      result = ExBags.intersection(map1, map2)
+      result = ExBags.intersect(bag1, bag2)
 
       assert result == %{}
     end
 
-    test "returns all pairs when maps are identical" do
-      map1 = %{a: 1, b: 2}
-      map2 = %{a: 1, b: 2}
+    test "returns empty bag when second bag is empty" do
+      bag1 = %{a: [1], b: [2]}
+      bag2 = %{}
 
-      result = ExBags.intersection(map1, map2)
+      result = ExBags.intersect(bag1, bag2)
 
-      assert result == %{a: 1, b: 2}
+      assert result == %{}
     end
 
-    test "uses value from first map when keys match but values differ" do
-      map1 = %{a: 1, b: 2}
-      map2 = %{a: 10, b: 20}
+    test "returns all pairs when bags are identical" do
+      bag1 = %{a: [1], b: [2]}
+      bag2 = %{a: [1], b: [2]}
 
-      result = ExBags.intersection(map1, map2)
+      result = ExBags.intersect(bag1, bag2)
 
-      assert result == %{a: 1, b: 2}
+      assert result == %{a: [1], b: [2]}
+    end
+
+    test "handles duplicate values correctly" do
+      bag1 = %{a: [1, 1, 2], b: [2, 2, 3]}
+      bag2 = %{a: [1, 2], b: [2, 4]}
+
+      result = ExBags.intersect(bag1, bag2)
+
+      # Should have minimum count of each value
+      assert Map.get(result, :a) |> Enum.sort() == [1, 2]
+      assert Map.get(result, :b) |> Enum.sort() == [2]
     end
   end
 
   describe "difference/2" do
-    test "returns keys only in first map" do
-      map1 = %{a: 1, b: 2, c: 3}
-      map2 = %{b: 2, c: 4, d: 5}
+    test "returns values only in first bag" do
+      bag1 = %{a: [1, 2], b: [2, 3]}
+      bag2 = %{b: [2, 4], c: [5]}
 
-      result = ExBags.difference(map1, map2)
-      expected = %{a: 1}
+      result = ExBags.difference(bag1, bag2)
+      expected = %{a: [1, 2], b: [3]}
 
       assert result == expected
     end
 
-    test "returns all pairs when no common keys" do
-      map1 = %{a: 1, b: 2}
-      map2 = %{c: 3, d: 4}
+    test "returns empty bag when first bag is empty" do
+      bag1 = %{}
+      bag2 = %{a: [1], b: [2]}
 
-      result = ExBags.difference(map1, map2)
-
-      assert result == %{a: 1, b: 2}
-    end
-
-    test "returns empty map when first map is empty" do
-      map1 = %{}
-      map2 = %{a: 1, b: 2}
-
-      result = ExBags.difference(map1, map2)
+      result = ExBags.difference(bag1, bag2)
 
       assert result == %{}
     end
 
-    test "returns all pairs when second map is empty" do
-      map1 = %{a: 1, b: 2}
-      map2 = %{}
+    test "returns first bag when second bag is empty" do
+      bag1 = %{a: [1], b: [2]}
+      bag2 = %{}
 
-      result = ExBags.difference(map1, map2)
+      result = ExBags.difference(bag1, bag2)
 
-      assert result == %{a: 1, b: 2}
+      assert result == %{a: [1], b: [2]}
     end
 
-    test "returns empty map when maps are identical" do
-      map1 = %{a: 1, b: 2}
-      map2 = %{a: 1, b: 2}
+    test "returns empty bag when bags are identical" do
+      bag1 = %{a: [1], b: [2]}
+      bag2 = %{a: [1], b: [2]}
 
-      result = ExBags.difference(map1, map2)
+      result = ExBags.difference(bag1, bag2)
 
       assert result == %{}
+    end
+
+    test "handles duplicate values correctly" do
+      bag1 = %{a: [1, 1, 2], b: [2, 2, 3]}
+      bag2 = %{a: [1], b: [2]}
+
+      result = ExBags.difference(bag1, bag2)
+
+      # Should subtract the counts
+      assert Map.get(result, :a) |> Enum.sort() == [1, 2]
+      assert Map.get(result, :b) |> Enum.sort() == [2, 3]
     end
   end
 
   describe "symmetric_difference/2" do
-    test "returns keys in either map but not both" do
-      map1 = %{a: 1, b: 2, c: 3}
-      map2 = %{b: 2, c: 4, d: 5}
+    test "returns values in either bag but not both" do
+      bag1 = %{a: [1, 2], b: [2, 3]}
+      bag2 = %{b: [2, 4], c: [5]}
 
-      result = ExBags.symmetric_difference(map1, map2)
-      expected = %{a: 1, d: 5}
+      result = ExBags.symmetric_difference(bag1, bag2)
 
-      assert result == expected
+      # Should have values that differ in count
+      assert Map.get(result, :a) |> Enum.sort() == [1, 2]
+      assert Map.get(result, :b) |> Enum.sort() == [3, 4]
+      assert Map.get(result, :c) |> Enum.sort() == [5]
     end
 
-    test "returns all pairs when no common keys" do
-      map1 = %{a: 1, b: 2}
-      map2 = %{c: 3, d: 4}
+    test "returns empty bag when bags are identical" do
+      bag1 = %{a: [1], b: [2]}
+      bag2 = %{a: [1], b: [2]}
 
-      result = ExBags.symmetric_difference(map1, map2)
-
-      assert result == %{a: 1, b: 2, c: 3, d: 4}
-    end
-
-    test "returns all pairs from first map when second map is empty" do
-      map1 = %{a: 1, b: 2}
-      map2 = %{}
-
-      result = ExBags.symmetric_difference(map1, map2)
-
-      assert result == %{a: 1, b: 2}
-    end
-
-    test "returns all pairs from second map when first map is empty" do
-      map1 = %{}
-      map2 = %{a: 1, b: 2}
-
-      result = ExBags.symmetric_difference(map1, map2)
-
-      assert result == %{a: 1, b: 2}
-    end
-
-    test "returns empty map when maps are identical" do
-      map1 = %{a: 1, b: 2}
-      map2 = %{a: 1, b: 2}
-
-      result = ExBags.symmetric_difference(map1, map2)
+      result = ExBags.symmetric_difference(bag1, bag2)
 
       assert result == %{}
     end
 
-    test "excludes keys that exist in both maps regardless of values" do
-      map1 = %{a: 1, b: 2}
-      map2 = %{a: 10, b: 20}
+    test "returns union when no common keys" do
+      bag1 = %{a: [1], b: [2]}
+      bag2 = %{c: [3], d: [4]}
 
-      result = ExBags.symmetric_difference(map1, map2)
+      result = ExBags.symmetric_difference(bag1, bag2)
 
-      assert result == %{}
+      assert Map.get(result, :a) == [1]
+      assert Map.get(result, :b) == [2]
+      assert Map.get(result, :c) == [3]
+      assert Map.get(result, :d) == [4]
+    end
+
+    test "handles duplicate values correctly" do
+      bag1 = %{a: [1, 1, 2]}
+      bag2 = %{a: [1, 2, 2]}
+
+      result = ExBags.symmetric_difference(bag1, bag2)
+
+      # Should have the difference in counts
+      assert Map.get(result, :a) |> Enum.sort() == [1, 2]
     end
   end
 
   describe "reconcile/2" do
-    test "returns three maps: intersection, only in first, only in second" do
-      map1 = %{a: 1, b: 2, c: 3}
-      map2 = %{b: 2, c: 4, d: 5}
+    test "returns three bags: common, only first, only second" do
+      bag1 = %{a: [1, 2], b: [2, 3]}
+      bag2 = %{b: [2, 4], c: [5]}
 
-      {intersection, only_in_first, only_in_second} = ExBags.reconcile(map1, map2)
+      {common, only_first, only_second} = ExBags.reconcile(bag1, bag2)
 
-      assert intersection == %{b: 2, c: 3}
-      assert only_in_first == %{a: 1}
-      assert only_in_second == %{d: 5}
+      assert common == %{b: [2]}
+      assert only_first == %{a: [1, 2], b: [3]}
+      assert only_second == %{b: [4], c: [5]}
     end
 
-    test "returns empty intersection when no common keys" do
-      map1 = %{a: 1, b: 2}
-      map2 = %{c: 3, d: 4}
+    test "handles empty bags" do
+      {common, only_first, only_second} = ExBags.reconcile(%{}, %{})
 
-      {intersection, only_in_first, only_in_second} = ExBags.reconcile(map1, map2)
-
-      assert intersection == %{}
-      assert only_in_first == %{a: 1, b: 2}
-      assert only_in_second == %{c: 3, d: 4}
+      assert common == %{}
+      assert only_first == %{}
+      assert only_second == %{}
     end
 
-    test "returns all in intersection when maps are identical" do
-      map1 = %{a: 1, b: 2}
-      map2 = %{a: 1, b: 2}
+    test "handles one empty bag" do
+      bag1 = %{a: [1], b: [2]}
+      bag2 = %{}
 
-      {intersection, only_in_first, only_in_second} = ExBags.reconcile(map1, map2)
+      {common, only_first, only_second} = ExBags.reconcile(bag1, bag2)
 
-      assert intersection == %{a: 1, b: 2}
-      assert only_in_first == %{}
-      assert only_in_second == %{}
+      assert common == %{}
+      assert only_first == %{a: [1], b: [2]}
+      assert only_second == %{}
     end
 
-    test "handles empty maps correctly" do
-      map1 = %{}
-      map2 = %{a: 1, b: 2}
+    test "handles identical bags" do
+      bag1 = %{a: [1], b: [2]}
+      bag2 = %{a: [1], b: [2]}
 
-      {intersection, only_in_first, only_in_second} = ExBags.reconcile(map1, map2)
+      {common, only_first, only_second} = ExBags.reconcile(bag1, bag2)
 
-      assert intersection == %{}
-      assert only_in_first == %{}
-      assert only_in_second == %{a: 1, b: 2}
-    end
-
-    test "handles both empty maps" do
-      map1 = %{}
-      map2 = %{}
-
-      {intersection, only_in_first, only_in_second} = ExBags.reconcile(map1, map2)
-
-      assert intersection == %{}
-      assert only_in_first == %{}
-      assert only_in_second == %{}
-    end
-
-    test "uses value from first map in intersection when keys match but values differ" do
-      map1 = %{a: 1, b: 2}
-      map2 = %{a: 10, b: 20}
-
-      {intersection, only_in_first, only_in_second} = ExBags.reconcile(map1, map2)
-
-      assert intersection == %{a: 1, b: 2}
-      assert only_in_first == %{}
-      assert only_in_second == %{}
+      assert common == %{a: [1], b: [2]}
+      assert only_first == %{}
+      assert only_second == %{}
     end
   end
 
-  describe "edge cases" do
-    test "handles maps with different value types" do
-      map1 = %{a: 1, b: "hello", c: [1, 2, 3]}
-      map2 = %{b: "world", c: [4, 5, 6], d: :atom}
+  describe "stream functions" do
+    test "intersect_stream returns same result as intersect" do
+      bag1 = %{a: [1, 2], b: [2, 3]}
+      bag2 = %{b: [2, 4], c: [5]}
 
-      {intersection, only_in_first, only_in_second} = ExBags.reconcile(map1, map2)
+      result = ExBags.intersect(bag1, bag2)
+      stream_result = ExBags.intersect_stream(bag1, bag2) |> Enum.to_list() |> Enum.sort()
 
-      assert intersection == %{b: "hello", c: [1, 2, 3]}
-      assert only_in_first == %{a: 1}
-      assert only_in_second == %{d: :atom}
+      assert Map.to_list(result) |> Enum.sort() == stream_result
     end
 
-    test "handles maps with nil values" do
-      map1 = %{a: 1, b: nil}
-      map2 = %{b: nil, c: 3}
+    test "difference_stream returns same result as difference" do
+      bag1 = %{a: [1, 2], b: [2, 3]}
+      bag2 = %{b: [2, 4], c: [5]}
 
-      {intersection, only_in_first, only_in_second} = ExBags.reconcile(map1, map2)
+      result = ExBags.difference(bag1, bag2)
+      stream_result = ExBags.difference_stream(bag1, bag2) |> Enum.to_list() |> Enum.sort()
 
-      assert intersection == %{b: nil}
-      assert only_in_first == %{a: 1}
-      assert only_in_second == %{c: 3}
-    end
-  end
-
-  describe "intersection_stream/2" do
-      test "returns stream of common key-value pairs" do
-        map1 = %{a: 1, b: 2, c: 3}
-        map2 = %{b: 2, c: 4, d: 5}
-
-        result = ExBags.intersection_stream(map1, map2) |> Enum.to_list() |> Enum.sort()
-        expected = [{:b, 2}, {:c, 3}]
-
-        assert result == expected
-      end
-
-      test "returns empty stream when no common keys" do
-        map1 = %{a: 1, b: 2}
-        map2 = %{c: 3, d: 4}
-
-        result = ExBags.intersection_stream(map1, map2) |> Enum.to_list()
-
-        assert result == []
-      end
-
-      test "returns empty stream when first map is empty" do
-        map1 = %{}
-        map2 = %{a: 1, b: 2}
-
-        result = ExBags.intersection_stream(map1, map2) |> Enum.to_list()
-
-        assert result == []
-      end
-
-      test "uses value from first map when keys match but values differ" do
-        map1 = %{a: 1, b: 2}
-        map2 = %{a: 10, b: 20}
-
-        result = ExBags.intersection_stream(map1, map2) |> Enum.to_list() |> Enum.sort()
-
-        assert result == [{:a, 1}, {:b, 2}]
-      end
+      assert Map.to_list(result) |> Enum.sort() == stream_result
     end
 
-  describe "difference_stream/2" do
-      test "returns stream of keys only in first map" do
-        map1 = %{a: 1, b: 2, c: 3}
-        map2 = %{b: 2, c: 4, d: 5}
+    test "symmetric_difference_stream returns same result as symmetric_difference" do
+      bag1 = %{a: [1, 2], b: [2, 3]}
+      bag2 = %{b: [2, 4], c: [5]}
 
-        result = ExBags.difference_stream(map1, map2) |> Enum.to_list() |> Enum.sort()
-        expected = [{:a, 1}]
+      result = ExBags.symmetric_difference(bag1, bag2)
+      stream_result = ExBags.symmetric_difference_stream(bag1, bag2) |> Enum.to_list() |> Enum.sort()
 
-        assert result == expected
-      end
-
-      test "returns empty stream when no unique keys in first map" do
-        map1 = %{a: 1, b: 2}
-        map2 = %{a: 1, b: 2}
-
-        result = ExBags.difference_stream(map1, map2) |> Enum.to_list()
-
-        assert result == []
-      end
-
-      test "returns all pairs when second map is empty" do
-        map1 = %{a: 1, b: 2}
-        map2 = %{}
-
-        result = ExBags.difference_stream(map1, map2) |> Enum.to_list() |> Enum.sort()
-
-        assert result == [{:a, 1}, {:b, 2}]
-      end
+      assert Map.to_list(result) |> Enum.sort() == stream_result
     end
 
-  describe "symmetric_difference_stream/2" do
-      test "returns stream of keys in either map but not both" do
-        map1 = %{a: 1, b: 2, c: 3}
-        map2 = %{b: 2, c: 4, d: 5}
+    test "reconcile_stream returns same result as reconcile" do
+      bag1 = %{a: [1, 2], b: [2, 3]}
+      bag2 = %{b: [2, 4], c: [5]}
 
-        result = ExBags.symmetric_difference_stream(map1, map2) |> Enum.to_list() |> Enum.sort()
-        expected = [{:a, 1}, {:d, 5}]
+      {common, only_first, only_second} = ExBags.reconcile(bag1, bag2)
+      {stream_common, stream_only_first, stream_only_second} = ExBags.reconcile_stream(bag1, bag2)
 
-        assert result == expected
-      end
-
-      test "returns all pairs when no common keys" do
-        map1 = %{a: 1, b: 2}
-        map2 = %{c: 3, d: 4}
-
-        result = ExBags.symmetric_difference_stream(map1, map2) |> Enum.to_list() |> Enum.sort()
-
-        assert result == [{:a, 1}, {:b, 2}, {:c, 3}, {:d, 4}]
-      end
-
-      test "returns empty stream when maps are identical" do
-        map1 = %{a: 1, b: 2}
-        map2 = %{a: 1, b: 2}
-
-        result = ExBags.symmetric_difference_stream(map1, map2) |> Enum.to_list()
-
-        assert result == []
-      end
-
-      test "excludes keys that exist in both maps regardless of values" do
-        map1 = %{a: 1, b: 2}
-        map2 = %{a: 10, b: 20}
-
-        result = ExBags.symmetric_difference_stream(map1, map2) |> Enum.to_list()
-
-        assert result == []
-      end
-    end
-
-  describe "reconcile_stream/2" do
-      test "returns three streams: intersection, only in first, only in second" do
-        map1 = %{a: 1, b: 2, c: 3}
-        map2 = %{b: 2, c: 4, d: 5}
-
-        {common, only_first, only_second} = ExBags.reconcile_stream(map1, map2)
-
-        assert Enum.to_list(common) |> Enum.sort() == [{:b, 2}, {:c, 3}]
-        assert Enum.to_list(only_first) |> Enum.sort() == [{:a, 1}]
-        assert Enum.to_list(only_second) |> Enum.sort() == [{:d, 5}]
-      end
-
-      test "returns empty intersection stream when no common keys" do
-        map1 = %{a: 1, b: 2}
-        map2 = %{c: 3, d: 4}
-
-        {common, only_first, only_second} = ExBags.reconcile_stream(map1, map2)
-
-        assert Enum.to_list(common) == []
-        assert Enum.to_list(only_first) |> Enum.sort() == [{:a, 1}, {:b, 2}]
-        assert Enum.to_list(only_second) |> Enum.sort() == [{:c, 3}, {:d, 4}]
-      end
-
-      test "returns all in intersection stream when maps are identical" do
-        map1 = %{a: 1, b: 2}
-        map2 = %{a: 1, b: 2}
-
-        {common, only_first, only_second} = ExBags.reconcile_stream(map1, map2)
-
-        assert Enum.to_list(common) |> Enum.sort() == [{:a, 1}, {:b, 2}]
-        assert Enum.to_list(only_first) == []
-        assert Enum.to_list(only_second) == []
-      end
-
-      test "handles empty maps correctly" do
-        map1 = %{}
-        map2 = %{a: 1, b: 2}
-
-        {common, only_first, only_second} = ExBags.reconcile_stream(map1, map2)
-
-        assert Enum.to_list(common) == []
-        assert Enum.to_list(only_first) == []
-        assert Enum.to_list(only_second) |> Enum.sort() == [{:a, 1}, {:b, 2}]
-      end
-
-      test "handles both empty maps" do
-        map1 = %{}
-        map2 = %{}
-
-        {common, only_first, only_second} = ExBags.reconcile_stream(map1, map2)
-
-        assert Enum.to_list(common) == []
-        assert Enum.to_list(only_first) == []
-        assert Enum.to_list(only_second) == []
-      end
-    end
-
-  describe "stream laziness" do
-      test "streams are lazy and can be processed incrementally" do
-        map1 = %{a: 1, b: 2, c: 3, d: 4, e: 5}
-        map2 = %{b: 2, c: 4, d: 6, f: 7}
-
-        # Test that we can take only the first few elements
-        intersection_stream = ExBags.intersection_stream(map1, map2)
-        first_two = intersection_stream |> Stream.take(2) |> Enum.to_list()
-
-        assert length(first_two) == 2
-        assert Enum.all?(first_two, fn {key, _value} -> key in [:b, :c, :d] end)
-      end
-
-      test "streams can be filtered and transformed" do
-        map1 = %{a: 1, b: 2, c: 3}
-        map2 = %{b: 2, c: 4, d: 5}
-
-        # Filter and transform the stream
-        result = ExBags.intersection_stream(map1, map2)
-        |> Stream.filter(fn {_key, value} -> value > 2 end)
-        |> Stream.map(fn {key, value} -> {key, value * 2} end)
-        |> Enum.to_list()
-
-        assert result == [{:c, 6}]
-      end
+      assert Map.to_list(common) |> Enum.sort() == Enum.to_list(stream_common) |> Enum.sort()
+      assert Map.to_list(only_first) |> Enum.sort() == Enum.to_list(stream_only_first) |> Enum.sort()
+      assert Map.to_list(only_second) |> Enum.sort() == Enum.to_list(stream_only_second) |> Enum.sort()
     end
   end
+end
