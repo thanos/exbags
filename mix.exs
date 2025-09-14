@@ -34,7 +34,8 @@ defmodule ExBags.MixProject do
     [
       {:ex_doc, "~> 0.24", only: :dev, runtime: false},
       {:stream_data, "~> 0.5", only: :test},
-      {:excoveralls, "~> 0.18", only: :test}
+      {:excoveralls, "~> 0.18", only: :test},
+      {:benchee, "~> 1.0", only: :dev}
     ]
   end
 
