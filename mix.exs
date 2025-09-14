@@ -50,7 +50,7 @@ defmodule ExBags.MixProject do
       maintainers: ["thanos vassilakis"],
       licenses: ["MIT"],
       links: %{
-        "GitHub" => "https://github.com/thanos/ex_bags"
+        "GitHub" => "https://github.com/thanos/exbags"
       }
     ]
   end
