@@ -275,7 +275,7 @@ mix benchmark.stream       # Compare ExBags stream vs eager
 mix benchmark.all          # Run all benchmarks
 
 # Update README with current results
-mix run update_readme_benchmarks.exs
+mix run priv/scripts/update_readme_benchmarks.exs
 ```
 
 Compare ExBags with Map and MapSet operations across different dataset sizes.
@@ -291,7 +291,3 @@ See [CHANGELOG.md](CHANGELOG.md) for a detailed list of changes and migration gu
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
-- Duplicate bag implementation with core operations
-- Set operations: intersect, difference, symmetric_difference, reconcile
-- Stream versions for memory-efficient processing
-- Comprehensive test coverage

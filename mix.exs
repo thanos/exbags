@@ -58,10 +58,10 @@ defmodule ExBags.MixProject do
   # Custom mix tasks
   defp aliases do
     [
-      "benchmark": "run benchmarks/benchmarks.exs",
-      "benchmark.intersect": "run benchmarks/intersect_benchmark.exs",
-      "benchmark.stream": "run benchmarks/stream_benchmark.exs",
-      "benchmark.all": "run run_benchmarks.exs"
+      benchmark: "run priv/scripts/benchmarks.exs",
+      "benchmark.intersect": "run priv/scripts/intersect_benchmark.exs",
+      "benchmark.stream": "run priv/scripts/stream_benchmark.exs",
+      "benchmark.all": "run priv/scripts/run_benchmarks.exs"
     ]
   end
 end
