@@ -11,7 +11,14 @@ defmodule ExBags.MixProject do
       description: description(),
       package: package(),
       source_url: "https://github.com/thanos/ex_bags",
-      homepage_url: "https://github.com/thanos/ex_bags"
+      homepage_url: "https://github.com/thanos/ex_bags",
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ]
     ]
   end
 
@@ -26,7 +33,8 @@ defmodule ExBags.MixProject do
   defp deps do
     [
       {:ex_doc, "~> 0.24", only: :dev, runtime: false},
-      {:stream_data, "~> 0.5", only: :test}
+      {:stream_data, "~> 0.5", only: :test},
+      {:excoveralls, "~> 0.18", only: :test}
     ]
   end
 

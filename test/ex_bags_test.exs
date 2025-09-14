@@ -76,12 +76,12 @@ defmodule ExBagsTest do
   end
 
   describe "intersect/2" do
-    test "merges values for common keys" do
+    test "returns tuples of values for common keys" do
       bag1 = %{a: [1, 2], b: [2, 3]}
       bag2 = %{b: [2, 4], c: [5]}
 
       result = ExBags.intersect(bag1, bag2)
-      expected = %{b: [2, 3, 2, 4]}
+      expected = %{b: {[2, 3], [2, 4]}}
 
       assert result == expected
     end
@@ -119,7 +119,7 @@ defmodule ExBagsTest do
 
       result = ExBags.intersect(bag1, bag2)
 
-      assert result == %{a: [1, 1], b: [2, 2]}
+      assert result == %{a: {[1], [1]}, b: {[2], [2]}}
     end
 
     test "handles duplicate values correctly" do
@@ -128,9 +128,8 @@ defmodule ExBagsTest do
 
       result = ExBags.intersect(bag1, bag2)
 
-      # Should merge all values from both bags
-      assert Map.get(result, :a) |> Enum.sort() == [1, 1, 1, 2, 2]
-      assert Map.get(result, :b) |> Enum.sort() == [2, 2, 2, 3, 4]
+      # Should return tuples of values from both bags
+      assert result == %{a: {[1, 1, 2], [1, 2]}, b: {[2, 2, 3], [2, 4]}}
     end
   end
 
@@ -236,7 +235,7 @@ defmodule ExBagsTest do
 
       {common, only_first, only_second} = ExBags.reconcile(bag1, bag2)
 
-      assert common == %{b: [2, 3, 2, 4]}
+      assert common == %{b: [2]}
       assert only_first == %{a: [1, 2], b: [3]}
       assert only_second == %{b: [4], c: [5]}
     end
@@ -266,7 +265,7 @@ defmodule ExBagsTest do
 
       {common, only_first, only_second} = ExBags.reconcile(bag1, bag2)
 
-      assert common == %{a: [1, 1], b: [2, 2]}
+      assert common == %{a: [1], b: [2]}
       assert only_first == %{}
       assert only_second == %{}
     end

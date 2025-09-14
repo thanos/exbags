@@ -17,7 +17,7 @@ defmodule ExBags do
       [1, 2]
 
       iex> ExBags.intersect(%{a: [1, 2], b: [2, 3]}, %{b: [2, 4], c: [5]})
-      %{b: [2, 3, 2, 4]}
+      %{b: {[2, 3], [2, 4]}}
 
       iex> ExBags.difference(%{a: [1, 2], b: [2, 3]}, %{b: [2, 4], c: [5]})
       %{a: [1, 2], b: [3]}
@@ -142,16 +142,16 @@ defmodule ExBags do
   @doc """
   Returns a bag containing only the key-value pairs that exist in both bags.
 
-  For duplicate bags, this finds the intersection of keys and merges the values
-  for those common keys. The result contains all values from both bags for each common key.
+  For duplicate bags, this finds the intersection of keys and returns tuples
+  containing the values from both bags for each common key.
 
   ## Examples
 
       iex> ExBags.intersect(%{a: [1, 2], b: [2, 3]}, %{b: [2, 4], c: [5]})
-      %{b: [2, 3, 2, 4]}
+      %{b: {[2, 3], [2, 4]}}
 
       iex> ExBags.intersect(%{a: [1, 1, 2], b: [2, 2, 3]}, %{a: [1, 2], b: [2, 4]})
-      %{a: [1, 1, 2, 1, 2], b: [2, 2, 3, 2, 4]}
+      %{a: {[1, 1, 2], [1, 2]}, b: {[2, 2, 3], [2, 4]}}
 
       iex> ExBags.intersect(%{}, %{a: [1]})
       %{}
@@ -165,11 +165,25 @@ defmodule ExBags do
     |> Enum.into(%{}, fn key ->
       values1 = Map.get(bag1, key, [])
       values2 = Map.get(bag2, key, [])
-      merged_values = values1 ++ values2
-      {key, merged_values}
+      {key, {values1, values2}}
     end)
   end
 
+  # Helper function to find intersection of two value lists
+  defp bag_intersection(list1, list2) do
+    # Count occurrences in each list
+    counts1 = Enum.frequencies(list1)
+    counts2 = Enum.frequencies(list2)
+
+    # Find common values and their minimum counts
+    common_values = Map.keys(counts1) -- (Map.keys(counts1) -- Map.keys(counts2))
+
+    common_values
+    |> Enum.flat_map(fn value ->
+      min_count = min(counts1[value], counts2[value])
+      List.duplicate(value, min_count)
+    end)
+  end
 
   @doc """
   Returns a bag containing only the key-value pairs that exist in the first bag
@@ -293,18 +307,30 @@ defmodule ExBags do
   ## Examples
 
       iex> ExBags.reconcile(%{a: [1, 2], b: [2, 3]}, %{b: [2, 4], c: [5]})
-      {%{b: [2, 3, 2, 4]}, %{a: [1, 2], b: [3]}, %{b: [4], c: [5]}}
+      {%{b: [2]}, %{a: [1, 2], b: [3]}, %{b: [4], c: [5]}}
 
       iex> ExBags.reconcile(%{a: [1]}, %{b: [2]})
       {%{}, %{a: [1]}, %{b: [2]}}
 
       iex> ExBags.reconcile(%{a: [1, 2], b: [3]}, %{a: [1, 2], b: [3]})
-      {%{a: [1, 2, 1, 2], b: [3, 3]}, %{}, %{}}
+      {%{a: [1, 2], b: [3]}, %{}, %{}}
 
   """
   @spec reconcile(map(), map()) :: {map(), map(), map()}
   def reconcile(bag1, bag2) when is_map(bag1) and is_map(bag2) do
-    intersection = intersect(bag1, bag2)
+    # For reconcile, we want the actual intersection of values, not tuples
+    intersection = bag1
+    |> Map.keys()
+    |> Enum.filter(&Map.has_key?(bag2, &1))
+    |> Enum.into(%{}, fn key ->
+      values1 = Map.get(bag1, key, [])
+      values2 = Map.get(bag2, key, [])
+      intersection_values = bag_intersection(values1, values2)
+      {key, intersection_values}
+    end)
+    |> Enum.reject(fn {_key, values} -> Enum.empty?(values) end)
+    |> Map.new()
+
     only_in_bag1 = difference(bag1, bag2)
     only_in_bag2 = difference(bag2, bag1)
 
@@ -321,10 +347,10 @@ defmodule ExBags do
   ## Examples
 
       iex> ExBags.intersect_stream(%{a: [1, 2], b: [2, 3]}, %{b: [2, 4], c: [5]}) |> Enum.to_list() |> Enum.sort()
-      [{:b, [2, 3, 2, 4]}]
+      [{:b, {[2, 3], [2, 4]}}]
 
       iex> ExBags.intersect_stream(%{a: [1, 1, 2], b: [2, 2, 3]}, %{a: [1, 2], b: [2, 4]}) |> Enum.to_list() |> Enum.sort()
-      [{:a, [1, 1, 2, 1, 2]}, {:b, [2, 2, 3, 2, 4]}]
+      [{:a, {[1, 1, 2], [1, 2]}}, {:b, {[2, 2, 3], [2, 4]}}]
 
       iex> ExBags.intersect_stream(%{}, %{a: [1]}) |> Enum.to_list()
       []
@@ -338,8 +364,7 @@ defmodule ExBags do
     |> Stream.map(fn key ->
       values1 = Map.get(bag1, key, [])
       values2 = Map.get(bag2, key, [])
-      merged_values = values1 ++ values2
-      {key, merged_values}
+      {key, {values1, values2}}
     end)
   end
 
@@ -436,7 +461,7 @@ defmodule ExBags do
 
       iex> {common, only_first, only_second} = ExBags.reconcile_stream(%{a: [1, 2], b: [2, 3]}, %{b: [2, 4], c: [5]})
       iex> {Enum.to_list(common) |> Enum.sort(), Enum.to_list(only_first) |> Enum.sort(), Enum.to_list(only_second) |> Enum.sort()}
-      {[{:b, [2, 3, 2, 4]}], [{:a, [1, 2]}, {:b, [3]}], [{:b, [4]}, {:c, [5]}]}
+      {[{:b, [2]}], [{:a, [1, 2]}, {:b, [3]}], [{:b, [4]}, {:c, [5]}]}
 
       iex> {common, only_first, only_second} = ExBags.reconcile_stream(%{a: [1]}, %{b: [2]})
       iex> {Enum.to_list(common), Enum.to_list(only_first), Enum.to_list(only_second)}
@@ -444,12 +469,23 @@ defmodule ExBags do
 
       iex> {common, only_first, only_second} = ExBags.reconcile_stream(%{a: [1], b: [2]}, %{a: [1], b: [2]})
       iex> {Enum.to_list(common) |> Enum.sort(), Enum.to_list(only_first), Enum.to_list(only_second)}
-      {[{:a, [1, 1]}, {:b, [2, 2]}], [], []}
+      {[{:a, [1]}, {:b, [2]}], [], []}
 
   """
   @spec reconcile_stream(map(), map()) :: {Enumerable.t(), Enumerable.t(), Enumerable.t()}
   def reconcile_stream(map1, map2) when is_map(map1) and is_map(map2) do
-    common_stream = intersect_stream(map1, map2)
+    # For reconcile_stream, we want the actual intersection of values, not tuples
+    common_stream = map1
+    |> Map.keys()
+    |> Stream.filter(&Map.has_key?(map2, &1))
+    |> Stream.map(fn key ->
+      values1 = Map.get(map1, key, [])
+      values2 = Map.get(map2, key, [])
+      intersection_values = bag_intersection(values1, values2)
+      {key, intersection_values}
+    end)
+    |> Stream.reject(fn {_key, values} -> Enum.empty?(values) end)
+
     only_first_stream = difference_stream(map1, map2)
     only_second_stream = difference_stream(map2, map1)
 

@@ -1,6 +1,6 @@
 # ExBags
 
-A duplicate bag (multiset) implementation for Elixir with set-like operations.
+Duplicate bag (multiset) implementation for Elixir with set operations.
 
 ## Installation
 
@@ -16,7 +16,7 @@ end
 
 ## Overview
 
-ExBags provides a duplicate bag implementation that allows multiple values for the same key. A duplicate bag is like a map but stores values as lists, enabling you to track multiple occurrences of the same value for each key.
+ExBags implements duplicate bags that allow multiple values for the same key. Values are stored as lists, enabling tracking of multiple occurrences for each key.
 
 Use cases:
 - Data reconciliation and synchronization
@@ -94,19 +94,19 @@ iex> ExBags.update(bag, :a, fn values -> Enum.map(values, &(&1 * 2)) end)
 
 ### `intersect/2`
 
-Returns a bag containing only the key-value pairs that exist in both bags.
+Returns key-value pairs that exist in both bags. Values are returned as tuples containing values from each bag.
 
 ```elixir
 iex> ExBags.intersect(%{a: [1, 2], b: [2, 3]}, %{b: [2, 4], c: [5]})
-%{b: [2, 3, 2, 4]}
+%{b: {[2, 3], [2, 4]}}
 
 iex> ExBags.intersect(%{a: [1, 1, 2], b: [2, 2, 3]}, %{a: [1, 2], b: [2, 4]})
-%{a: [1, 1, 2, 1, 2], b: [2, 2, 3, 2, 4]}
+%{a: {[1, 1, 2], [1, 2]}, b: {[2, 2, 3], [2, 4]}}
 ```
 
 ### `difference/2`
 
-Returns a bag containing only the key-value pairs that exist in the first bag but not in the second bag.
+Returns key-value pairs that exist in the first bag but not in the second bag.
 
 ```elixir
 iex> ExBags.difference(%{a: [1, 2], b: [2, 3]}, %{b: [2, 4], c: [5]})
@@ -118,7 +118,7 @@ iex> ExBags.difference(%{a: [1, 1, 2], b: [2, 2, 3]}, %{a: [1], b: [2]})
 
 ### `symmetric_difference/2`
 
-Returns a bag containing key-value pairs that exist in either bag but not in both.
+Returns key-value pairs that exist in either bag but not in both.
 
 ```elixir
 iex> ExBags.symmetric_difference(%{a: [1, 2], b: [2, 3]}, %{b: [2, 4], c: [5]})
@@ -130,11 +130,11 @@ iex> ExBags.symmetric_difference(%{a: [1, 1, 2]}, %{a: [1, 2, 2]})
 
 ### `reconcile/2`
 
-Performs a reconciliation operation similar to SQL's FULL OUTER JOIN for duplicate bags. Returns a tuple of three bags:
+Performs reconciliation similar to SQL FULL OUTER JOIN. Returns a tuple of three bags:
 
-1. Intersection: Key-value pairs that exist in both bags
-2. Only in first: Key-value pairs that exist only in the first bag
-3. Only in second: Key-value pairs that exist only in the second bag
+1. Common: Key-value pairs that exist in both bags
+2. Only first: Key-value pairs that exist only in the first bag
+3. Only second: Key-value pairs that exist only in the second bag
 
 ```elixir
 iex> ExBags.reconcile(%{a: [1, 2], b: [2, 3]}, %{b: [2, 4], c: [5]})
@@ -146,23 +146,18 @@ iex> ExBags.reconcile(%{a: [1]}, %{b: [2]})
 
 ## Stream Functions
 
-Memory-efficient stream versions of all functions:
+Memory-efficient stream versions for large datasets:
 
 ### `intersect_stream/2`, `difference_stream/2`, `symmetric_difference_stream/2`, `reconcile_stream/2`
 
-These functions return streams instead of bags for processing large datasets.
+These functions return streams instead of bags.
 
 ```elixir
 iex> ExBags.intersect_stream(%{a: [1, 2], b: [2, 3]}, %{b: [2, 4], c: [5]}) |> Enum.to_list() |> Enum.sort()
-[{:b, [2, 3, 2, 4]}]
+[{:b, {[2, 3], [2, 4]}}]
 
 iex> stream = ExBags.intersect_stream(large_bag1, large_bag2)
 iex> first_ten = stream |> Stream.take(10) |> Enum.to_list()
-
-iex> result = ExBags.intersect_stream(bag1, bag2)
-...> |> Stream.filter(fn {_key, values} -> length(values) > 1 end)
-...> |> Stream.map(fn {key, values} -> {key, Enum.map(values, &(&1 * 2))} end)
-...> |> Enum.to_list()
 
 iex> {common, only_first, only_second} = ExBags.reconcile_stream(bag1, bag2)
 iex> {Enum.to_list(common) |> Enum.sort(), Enum.to_list(only_first) |> Enum.sort(), Enum.to_list(only_second) |> Enum.sort()}
