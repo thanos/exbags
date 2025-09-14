@@ -7,19 +7,19 @@ defmodule ReadmeUpdater do
 
   def update_readme do
     IO.puts("📝 Updating README with benchmark results...")
-    
+
     # Read current README
     readme_content = File.read!("README.md")
-    
+
     # Generate new performance section
     new_performance_section = generate_performance_section()
-    
+
     # Replace the performance section in README
     updated_content = replace_performance_section(readme_content, new_performance_section)
-    
+
     # Write updated README
     File.write!("README.md", updated_content)
-    
+
     IO.puts("✅ README updated with current benchmark results!")
   end
 
@@ -93,7 +93,7 @@ ExBags.intersect_stream(map1, map2) |> Enum.to_list()
 # Good: Process stream incrementally
 ExBags.intersect_stream(large_map1, large_map2)
 |> Stream.take(1000)  # Process in chunks
-|> Enum.each(fn {key, {vals1, vals2}} -> 
+|> Enum.each(fn {key, {vals1, vals2}} ->
   # Process each result
 end)
 ```
@@ -108,7 +108,7 @@ result = ExBags.intersect(small_map1, small_map2)
 ```elixir
 # Good: Stream with backpressure
 ExBags.intersect_stream(map1, map2)
-|> Stream.flat_map(fn {_key, {vals1, vals2}} -> 
+|> Stream.flat_map(fn {_key, {vals1, vals2}} ->
   # Process and filter immediately
   if length(vals1) > 0, do: [{key, {vals1, vals2}}], else: []
 end)
@@ -153,14 +153,14 @@ end)
     # Find the performance section and replace it
     start_pattern = "## Performance"
     end_pattern = "## Testing"
-    
-    start_index = String.split(content, start_pattern) |> length() |> Kernel.>(1) && 
+
+    start_index = String.split(content, start_pattern) |> length() |> Kernel.>(1) &&
                   String.split(content, start_pattern) |> List.first() |> String.length() + String.length(start_pattern)
-    
+
     if start_index do
       before_section = String.slice(content, 0, start_index)
       after_section = content |> String.split(end_pattern) |> List.last() |> then(&"## Testing" <> &1)
-      
+
       before_section <> "\n" <> new_section <> "\n" <> after_section
     else
       # If performance section not found, add it before testing

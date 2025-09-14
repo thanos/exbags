@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Comprehensive Benchmarking System**
   - Added `Benchee` dependency for performance testing
-  - Created organized benchmark scripts in `priv/scripts/` directory
+  - Created organized benchmark scripts in `priv/scripts/benchmarks/` directory
   - Added mix aliases for easy benchmark execution:
     - `mix benchmark` - Run all benchmarks
     - `mix benchmark.intersect` - Compare Map, MapSet, ExBags intersect
