@@ -98,10 +98,10 @@ Returns a bag containing only the key-value pairs that exist in both bags.
 
 ```elixir
 iex> ExBags.intersect(%{a: [1, 2], b: [2, 3]}, %{b: [2, 4], c: [5]})
-%{b: [2]}
+%{b: [2, 3, 2, 4]}
 
 iex> ExBags.intersect(%{a: [1, 1, 2], b: [2, 2, 3]}, %{a: [1, 2], b: [2, 4]})
-%{a: [1, 2], b: [2]}
+%{a: [1, 1, 2, 1, 2], b: [2, 2, 3, 2, 4]}
 ```
 
 ### `difference/2`
@@ -154,7 +154,7 @@ These functions return streams instead of bags for processing large datasets.
 
 ```elixir
 iex> ExBags.intersect_stream(%{a: [1, 2], b: [2, 3]}, %{b: [2, 4], c: [5]}) |> Enum.to_list() |> Enum.sort()
-[{:b, [2]}]
+[{:b, [2, 3, 2, 4]}]
 
 iex> stream = ExBags.intersect_stream(large_bag1, large_bag2)
 iex> first_ten = stream |> Stream.take(10) |> Enum.to_list()

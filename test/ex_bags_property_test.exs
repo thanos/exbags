@@ -54,17 +54,19 @@ defmodule ExBagsPropertyTest do
       end
     end
 
-    property "intersection uses values from first map" do
+    property "intersection merges values from both maps" do
       check all(
             map1 <- small_map_generator(),
             map2 <- small_map_generator()
           ) do
         result = ExBags.intersect(map1, map2)
 
-        # All values in result should be a subset of the first map
+        # All values in result should come from both maps
         for {key, values} <- result do
-          original_values = Map.get(map1, key, [])
-          # Check that all values in result are in the original
+          original_values1 = Map.get(map1, key, [])
+          original_values2 = Map.get(map2, key, [])
+          original_values = original_values1 ++ original_values2
+          # Check that all values in result are in the combined original values
           assert Enum.all?(values, &(&1 in original_values))
         end
       end
@@ -77,14 +79,14 @@ defmodule ExBagsPropertyTest do
       end
     end
 
-    property "intersection with identical maps returns the map" do
+    property "intersection with identical maps doubles the values" do
       check all(map <- small_map_generator()) do
         result = ExBags.intersect(map, map)
-        # For duplicate bags, we need to check that the result contains the same values
-        # but the order might be different due to frequency counting
+        # For duplicate bags, intersecting with itself should double all values
         for {key, values} <- result do
           original_values = Map.get(map, key, [])
-          assert Enum.sort(values) == Enum.sort(original_values)
+          expected_values = original_values ++ original_values
+          assert Enum.sort(values) == Enum.sort(expected_values)
         end
       end
     end
@@ -150,18 +152,17 @@ defmodule ExBagsPropertyTest do
       end
     end
 
-    property "symmetric difference excludes common keys" do
+    property "symmetric difference includes all keys" do
       check all(
             map1 <- small_map_generator(),
             map2 <- small_map_generator()
           ) do
         result = ExBags.symmetric_difference(map1, map2)
-        common_keys = Map.keys(ExBags.intersect(map1, map2))
+        all_keys = Map.keys(map1) ++ Map.keys(map2) |> Enum.uniq() |> Enum.sort()
+        result_keys = Map.keys(result) |> Enum.sort()
 
-        # No common keys should be in the result
-        for key <- common_keys do
-          refute Map.has_key?(result, key)
-        end
+        # All keys from both maps should be in the result
+        assert all_keys == result_keys
       end
     end
 
@@ -222,19 +223,18 @@ defmodule ExBagsPropertyTest do
       end
     end
 
-    property "reconcile with identical maps" do
+    property "reconcile with identical maps doubles values" do
       check all(map <- small_map_generator()) do
         {common, only_first, only_second} = ExBags.reconcile(map, map)
 
-        # For duplicate bags, empty lists get filtered out
-        non_empty_map = map |> Enum.reject(fn {_k, v} -> Enum.empty?(v) end) |> Map.new()
-        # Check that values match but order might differ
+        # Check that values are doubled but order might differ
         for {key, values} <- common do
-          original_values = Map.get(non_empty_map, key, [])
-          assert Enum.sort(values) == Enum.sort(original_values)
+          original_values = Map.get(map, key, [])
+          expected_values = original_values ++ original_values
+          assert Enum.sort(values) == Enum.sort(expected_values)
         end
         # Check that all keys are present
-        assert Map.keys(common) |> Enum.sort() == Map.keys(non_empty_map) |> Enum.sort()
+        assert Map.keys(common) |> Enum.sort() == Map.keys(map) |> Enum.sort()
         assert only_first == %{}
         assert only_second == %{}
       end
@@ -264,16 +264,19 @@ defmodule ExBagsPropertyTest do
       end
     end
 
-    property "reconcile common keys use values from first map" do
+    property "reconcile common keys merge values from both maps" do
       check all(
             map1 <- small_map_generator(),
             map2 <- small_map_generator()
           ) do
         {common, _only_first, _only_second} = ExBags.reconcile(map1, map2)
 
-        # Common keys should have values from first map
-        for {key, value} <- common do
-          assert Map.get(map1, key) == value
+        # Common keys should have merged values from both maps
+        for {key, values} <- common do
+          values1 = Map.get(map1, key, [])
+          values2 = Map.get(map2, key, [])
+          expected_values = values1 ++ values2
+          assert Enum.sort(values) == Enum.sort(expected_values)
         end
       end
     end
