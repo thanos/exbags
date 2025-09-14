@@ -5,7 +5,7 @@ defmodule ExBags.MixProject do
     [
       app: :ex_bags,
       version: "0.2.0",
-      elixir: "~> 1.11",
+      elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       description: description(),
@@ -33,10 +33,10 @@ defmodule ExBags.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ex_doc, "~> 0.24", only: :dev, runtime: false},
-      {:stream_data, "~> 0.5", only: :test},
+      {:ex_doc, "~> 0.38", only: :dev, runtime: false},
+      {:stream_data, "~> 1.2", only: :test},
       {:excoveralls, "~> 0.18", only: :test},
-      {:benchee, "~> 1.0", only: :dev}
+      {:benchee, "~> 1.4", only: :dev}
     ]
   end
 
@@ -61,7 +61,8 @@ defmodule ExBags.MixProject do
       benchmark: "run priv/scripts/benchmarks/benchmarks.exs",
       "benchmark.intersect": "run priv/scripts/benchmarks/intersect_benchmark.exs",
       "benchmark.stream": "run priv/scripts/benchmarks/stream_benchmark.exs",
-      "benchmark.all": "run priv/scripts/benchmarks/run_benchmarks.exs"
+      "benchmark.all": "run priv/scripts/benchmarks/run_benchmarks.exs",
+      "docs.readme": "run priv/scripts/copy_moduledoc_to_readme.exs"
     ]
   end
 end

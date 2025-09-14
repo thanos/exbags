@@ -36,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added benchmarking instructions and usage examples
   - Comprehensive performance analysis section
   - Stream optimization guidelines and best practices
+  - Added complete README content to ExBags moduledoc
+  - Created `mix docs.readme` command to sync moduledoc with README
 
 ### Changed
 - **Stream Performance Analysis**
@@ -45,10 +47,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added performance characteristics by dataset size
 
 - **Benchmark Organization**
-  - Moved all benchmark scripts to organized `benchmarks/` directory
+  - Moved all benchmark scripts to organized `priv/scripts/benchmarks/` directory
   - Separated intersect and stream benchmarks into focused scripts
   - Created main benchmark runner with proper module structure
   - Added performance analysis and README update scripts
+
+- **Dependency Updates**
+  - Updated `ex_doc` from `~> 0.24` to `~> 0.38`
+  - Updated `stream_data` from `~> 0.5` to `~> 1.2` (eliminated deprecation warnings)
+  - Updated `benchee` from `~> 1.0` to `~> 1.4`
+  - Updated Elixir version requirement from `~> 1.11` to `~> 1.15`
 
 ### Performance Improvements
 - **Stream Operations**: 1.6x to 330x faster than eager for large datasets
