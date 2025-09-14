@@ -18,6 +18,24 @@ defmodule ExBagsPropertyTest do
     end)
   end
 
+  # Helper function to find symmetric difference of two value lists (copied from ExBags)
+  defp bag_symmetric_difference(list1, list2) do
+    # Count occurrences in each list
+    counts1 = Enum.frequencies(list1)
+    counts2 = Enum.frequencies(list2)
+
+    # Find all unique values
+    all_values = Map.keys(counts1) ++ Map.keys(counts2) |> Enum.uniq()
+
+    all_values
+    |> Enum.flat_map(fn value ->
+      count1 = Map.get(counts1, value, 0)
+      count2 = Map.get(counts2, value, 0)
+      diff_count = abs(count1 - count2)
+      List.duplicate(value, diff_count)
+    end)
+  end
+
   # Custom generators for maps with various key and value types
   defp map_generator do
     StreamData.map_of(
@@ -174,13 +192,26 @@ defmodule ExBagsPropertyTest do
             map2 <- small_map_generator()
           ) do
         result = ExBags.symmetric_difference(map1, map2)
-        
-        # All keys from both maps should be in the result (including empty lists)
-        all_keys = (Map.keys(map1) ++ Map.keys(map2)) |> Enum.uniq() |> Enum.sort()
+
+        # Keys only in map1
+        only_in_map1 = Map.keys(map1) -- Map.keys(map2)
+        # Keys only in map2
+        only_in_map2 = Map.keys(map2) -- Map.keys(map1)
+        # Common keys that have non-empty symmetric difference
+        common_keys = Map.keys(map1) -- only_in_map1
+        common_keys_with_diff = common_keys |> Enum.filter(fn key ->
+          values1 = Map.get(map1, key, [])
+          values2 = Map.get(map2, key, [])
+          sym_diff = bag_symmetric_difference(values1, values2)
+          not Enum.empty?(sym_diff)
+        end)
+
+        # Expected keys: all "only in" keys + common keys with non-empty symmetric difference
+        expected_keys = (only_in_map1 ++ only_in_map2 ++ common_keys_with_diff) |> Enum.sort()
         result_keys = Map.keys(result) |> Enum.sort()
 
-        # All keys from both maps should be in the result
-        assert all_keys == result_keys
+        # All expected keys should be in the result
+        assert expected_keys == result_keys
       end
     end
 
@@ -198,9 +229,10 @@ defmodule ExBagsPropertyTest do
         # Create maps with no common keys
         map1_keys = Map.keys(map1)
         map2_keys = Map.keys(map2)
+        common_keys = map1_keys -- (map1_keys -- map2_keys)
 
         # If no common keys, symmetric difference should be union
-        if Enum.empty?(map1_keys -- map2_keys) or Enum.empty?(map2_keys -- map1_keys) do
+        if Enum.empty?(common_keys) do
           result = ExBags.symmetric_difference(map1, map2)
           union_keys = (map1_keys ++ map2_keys) |> Enum.uniq() |> Enum.sort()
           result_keys = Map.keys(result) |> Enum.sort()

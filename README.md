@@ -219,8 +219,18 @@ Test coverage:
 - 33 unit tests
 - 36 doctests
 - 22 property tests using StreamData
+- 100% code coverage
 
 Property testing validates functions with various inputs including different value types, empty bags, and large datasets.
+
+### Coverage Reports
+
+Generate HTML coverage report:
+```bash
+mix coveralls.html
+```
+
+View the report in `cover/excoveralls.html`.
 
 ## License
 
